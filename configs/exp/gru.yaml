@@ -1,0 +1,3 @@
+# base.yaml 에서 모델 타입만 바꾼 실험 설정 예시 (LSTM vs GRU 비교용)
+model:
+  type: "gru"

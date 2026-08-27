@@ -1,0 +1,4 @@
+# base.yaml 에서 embedding 방식만 바꾼 실험 설정 예시
+# 사용: python scripts/run_experiment.py --config configs/base.yaml --exp configs/exp/fasttext.yaml
+embedding:
+  method: "fasttext"

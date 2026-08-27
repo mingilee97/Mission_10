@@ -1,0 +1,4 @@
+# base.yaml 에서 embedding 방식만 바꾼 실험 설정 예시
+embedding:
+  method: "glove"
+  glove_path: "data/raw/glove.6B.100d.txt"   # TODO: 실제 다운로드한 GloVe 파일 경로로 교체

@@ -3,6 +3,7 @@ pandas
 numpy
 scikit-learn
 matplotlib
-yfinance
+gensim
+pyyaml
 jupyter
 ipywidgets
