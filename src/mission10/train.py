@@ -31,7 +31,6 @@ def train_one_epoch(
     Returns:
         해당 epoch의 평균 학습 loss.
     """
-    # TODO: model.train() -> 배치 순회하며 forward/backward/step -> 평균 loss 반환
     raise NotImplementedError
 
 
@@ -53,7 +52,6 @@ def evaluate(
     Returns:
         (평균 loss, 실제 라벨 리스트, 예측 라벨 리스트)
     """
-    # TODO: model.eval() -> 배치 순회하며 forward만 수행, argmax로 예측 라벨 산출
     raise NotImplementedError
 
 
@@ -76,5 +74,4 @@ def fit(
     Returns:
         {"train_loss": [...], "val_loss": [...]} 형태의 epoch별 기록.
     """
-    # TODO: optimizer/criterion 생성 -> train_cfg.epochs 만큼 train_one_epoch + evaluate 반복
     raise NotImplementedError

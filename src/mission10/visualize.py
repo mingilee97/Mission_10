@@ -16,7 +16,6 @@ def plot_training_curves(history: dict[str, list[float]], title: str = "") -> pl
     Returns:
         matplotlib Figure.
     """
-    # TODO: epoch 축으로 train_loss/val_loss 라인 플롯
     raise NotImplementedError
 
 
@@ -30,5 +29,4 @@ def plot_embedding_comparison(comparison_df: pd.DataFrame, metric: str = "accura
     Returns:
         matplotlib Figure.
     """
-    # TODO: comparison_df.index(embedding/model 종류)를 x축, metric을 y축으로 막대그래프
     raise NotImplementedError

@@ -17,6 +17,7 @@ class DataConfig:
     text_column: str | None = None
     label_column: str | None = None
     test_ratio: float = 0.2
+    val_ratio: float = 0.1  # test를 뗀 나머지(train_val) 중에서 val로 뗄 비율
     seed: int = 42
 
 

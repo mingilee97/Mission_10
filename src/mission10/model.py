@@ -35,10 +35,6 @@ class RNNTextClassifier(nn.Module):
             freeze_embedding: True면 임베딩 가중치를 학습 중 고정.
         """
         super().__init__()
-        # TODO:
-        # 1. nn.Embedding.from_pretrained(embedding_matrix, freeze=freeze_embedding, padding_idx=pad_id)
-        # 2. model_cfg.type에 따라 nn.LSTM 또는 nn.GRU 생성 (batch_first=True)
-        # 3. 마지막 hidden state -> nn.Linear(..., num_classes) 분류 헤드
         raise NotImplementedError
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -49,5 +45,4 @@ class RNNTextClassifier(nn.Module):
         Returns:
             FloatTensor[B, num_classes] 형태의 로짓.
         """
-        # TODO: embedding -> rnn -> 마지막 timestep(또는 hidden state) -> classifier
         raise NotImplementedError

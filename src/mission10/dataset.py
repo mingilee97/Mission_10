@@ -20,15 +20,12 @@ class TextClassificationDataset(Dataset):
             sequences: 각 문서를 단어 ID 시퀀스로 변환한 리스트 (가변 길이).
             labels: 문서별 라벨 (0/1 등).
         """
-        # TODO: self.sequences, self.labels 저장
         raise NotImplementedError
 
     def __len__(self) -> int:
-        # TODO: 전체 샘플 수 반환
         raise NotImplementedError
 
     def __getitem__(self, idx: int):
-        # TODO: (sequence: LongTensor, label: LongTensor) 반환. 패딩은 collate_fn에서 처리
         raise NotImplementedError
 
 
@@ -43,7 +40,6 @@ def collate_fn(batch: list[tuple], pad_id: int = 0, max_len: int | None = None):
     Returns:
         (padded_sequences: LongTensor[B, L], labels: LongTensor[B])
     """
-    # TODO: 길이 기준 정렬/패딩 (torch.nn.utils.rnn.pad_sequence 활용 가능)
     raise NotImplementedError
 
 
@@ -68,5 +64,4 @@ def build_dataloader(
     Returns:
         구성된 DataLoader.
     """
-    # TODO: TextClassificationDataset 생성 후 DataLoader로 감싸기
     raise NotImplementedError
