@@ -21,7 +21,6 @@ def train_word2vec(token_lists: list[list[str]], embedding_dim: int, window: int
     Returns:
         학습된 gensim Word2Vec 모델.
     """
-    # TODO: from gensim.models import Word2Vec; Word2Vec(token_lists, vector_size=..., window=..., min_count=...)
     raise NotImplementedError
 
 
@@ -37,7 +36,6 @@ def train_fasttext(token_lists: list[list[str]], embedding_dim: int, window: int
     Returns:
         학습된 gensim FastText 모델.
     """
-    # TODO: from gensim.models import FastText; FastText(token_lists, vector_size=..., window=..., min_count=...)
     raise NotImplementedError
 
 
@@ -51,7 +49,6 @@ def load_glove(glove_path: str, embedding_dim: int) -> dict[str, np.ndarray]:
     Returns:
         단어를 key로, numpy 벡터를 value로 갖는 dict.
     """
-    # TODO: 파일을 한 줄씩 읽어 "단어 v1 v2 ... vN" 형식을 파싱
     raise NotImplementedError
 
 
@@ -72,6 +69,4 @@ def build_embedding_matrix(
         shape (vocab_size, embedding_dim) 인 numpy 행렬. 인덱스는 vocab의 ID와 일치.
         keyed_vectors에 없는 단어는 랜덤 초기화 또는 0벡터로 채운다.
     """
-    # TODO: vocab 크기만큼 행렬을 만들고, 각 단어를 keyed_vectors에서 조회해 채우기
-    # OOV 처리 방식(랜덤 vs 0)도 여기서 결정
     raise NotImplementedError

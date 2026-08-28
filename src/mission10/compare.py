@@ -23,7 +23,6 @@ def run_experiment(config: Config) -> dict:
     Returns:
         {"config": config, "history": {...}, "metrics": {...}} 형태의 결과 dict.
     """
-    # TODO: preprocessing -> embeddings -> dataset -> model -> train.fit -> evaluate 순서로 파이프라인 연결
     raise NotImplementedError
 
 
@@ -36,5 +35,4 @@ def compare_results(results: list[dict]) -> pd.DataFrame:
     Returns:
         embedding.method(또는 model.type)를 행으로, accuracy/f1 등을 열로 갖는 DataFrame.
     """
-    # TODO: 각 result의 config.embedding.method와 metrics를 뽑아 DataFrame으로 정리
     raise NotImplementedError

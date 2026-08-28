@@ -4,86 +4,89 @@
 - 텍스트 데이터에서 토큰화를 수행한다.
 - 데이터를 훈련 세트와 테스트 세트로 적절히 분리한다.
 """
+from __future__ import annotations  # 파일에서 가장 먼저 와야 하는 특수 import (문법 규칙)
 
-from __future__ import annotations
+import re                            # 정규식(regex) 모듈
 
-import pandas as pd
+import pandas as pd                  # 표(DataFrame) 다루는 라이브러리
+from nltk.corpus import stopwords    # 영어 불용어 목록
+from sklearn.datasets import fetch_20newsgroups  # 20 Newsgroups 데이터셋 로더
 
 from mission10.config import DataConfig, PreprocessingConfig
+from nltk.tokenize import word_tokenize
+from collections import Counter
+from sklearn.model_selection import train_test_split
 
 
 def load_raw_data(data_cfg: DataConfig) -> pd.DataFrame:
-    """data_cfg.source에 따라 원본 텍스트 데이터를 읽어 ("text", "label") 두 열을 가진 DataFrame으로 반환한다.
-
-    Args:
-        data_cfg: source("20newsgroups" | "csv") 등을 포함한 설정.
-
-    Returns:
-        "text", "label" 두 열을 가진 DataFrame.
-    """
-    # TODO: source == "20newsgroups"인 경우
-    #   sklearn.datasets.fetch_20newsgroups(subset="all", remove=("headers", "footers", "quotes"))
-    #   반환된 .data(texts), .target(labels)를 DataFrame으로 변환
-    # source == "csv"인 경우 data_cfg.raw_path/text_column/label_column으로 pandas 로드 (현재 미사용 경로)
-    raise NotImplementedError
+    """20 Newsgroups 데이터를 (text, label) 두 열의 DataFrame으로 반환한다."""
+    news = fetch_20newsgroups(subset="all", remove=("headers", "footers", "quotes"))
+    # news.data   -> 문서(텍스트) 리스트
+    # news.target -> 라벨(0~19 정수) 리스트
+    df = pd.DataFrame({"text": news.data, "label": news.target})  # 'Label'이 아니라 'label' (소문자로 통일 — 나중 함수들이 소문자로 찾음)
+    return df
 
 
 def clean_text(text: str, cfg: PreprocessingConfig) -> str:
-    """소문자화, 특수문자 제거 등 텍스트 정제를 적용한다.
+    """소문자화, 특수문자 제거, 불용어 제거를 순서대로 적용한다."""
+    if cfg.lowercase:                              # base.yaml의 preprocessing.lowercase가 True일 때만
+        text = text.lower()                        # 모든 알파벳을 소문자로
 
-    Args:
-        text: 원본 텍스트 한 건.
-        cfg: lowercase, remove_special_chars 등 전처리 옵션.
+    if cfg.remove_special_chars:                   # remove_special_chars가 True일 때만
+        text = re.sub(r"[^a-zA-Z\s]", "", text)    # 영문자/공백이 아닌 문자(숫자, 문장부호 등)를 전부 제거
 
-    Returns:
-        정제된 텍스트.
-    """
-    # TODO: cfg.lowercase / cfg.remove_special_chars / cfg.remove_stopwords 순서로 적용
-    # remove_special_chars: re.sub(r"[^a-zA-Z\s]", "", text) 같은 정규식 활용
-    # remove_stopwords: nltk.corpus.stopwords.words("english") 사용 (nltk.download("stopwords") 필요)
-    raise NotImplementedError
+    if cfg.remove_stopwords:                        # remove_stopwords가 True일 때만
+        stop_words = set(stopwords.words("english"))  # 불용어 목록을 집합으로 (in 검사 속도 때문)
+        tokens = text.split()                        # 공백 기준으로 단어 리스트로 쪼갬
+        tokens = [w for w in tokens if w not in stop_words]  # 불용어가 아닌 단어만 남김
+        text = " ".join(tokens)                      # 다시 공백으로 이어붙여 문자열로
+
+    return text
 
 
 def tokenize(text: str) -> list[str]:
-    """정제된 텍스트를 토큰 리스트로 분리한다.
-
-    Args:
-        text: clean_text를 거친 텍스트.
-
-    Returns:
-        토큰(단어) 리스트.
-    """
-    # TODO: nltk.tokenize.word_tokenize 사용 (nltk.download("punkt"), nltk.download("punkt_tab") 필요)
-    raise NotImplementedError
-
+   
+    tokens = word_tokenize(text) # "hello world" -> ["hello", "world"] 처럼 단어 단위로 쪼갬 (단순 split보다 구두점 처리가 똑똑함)
+    return tokens
 
 def build_vocab(token_lists: list[list[str]], min_count: int = 1) -> dict[str, int]:
-    """토큰 리스트들로부터 단어 -> 정수 ID 사전을 만든다.
 
-    Args:
-        token_lists: 문서별 토큰 리스트의 리스트.
-        min_count: 이 빈도 미만인 단어는 사전에서 제외.
+    counter = Counter() # 단어별 등장 횟수를 세는 빈 카운터
+    for tokens in token_lists: # 각 문서별 토큰의 리스트
+        counter.update(tokens) # 그 문서의 단어들을 카운터에 누적해서 카운트
 
-    Returns:
-        단어를 key로, 정수 ID를 value로 갖는 dict. 0은 padding, 1은 미등록 단어(UNK)로 예약 권장.
-    """
-    # TODO: 빈도 계산 -> min_count 필터 -> ID 부여 (0=<pad>, 1=<unk> 예약)
-    raise NotImplementedError
+    vocab = {"<pad>": 0, "<unk>": 1}   # 0번은 패딩용, 1번은 미등록 단어(unknown)용으로 미리 예약해둔다
+    next_id = 2 # 2번 부터 사용
 
+    for word, freq in counter.items(): # counter에 쌓인 (단어, 등장횟수) 쌍을 하나씩 꺼냄
+        if freq >= min_count: # min_count 이상 등장한 단어만 사전에 넣는다
+            vocab[word] = next_id # 그 단어에 다음 아이디 부여
+            next_id += 1
+
+    return vocab
 
 def train_test_split_texts(
-    texts: list[str], labels: list[int], test_ratio: float, seed: int
-) -> tuple[list[str], list[str], list[int], list[int]]:
-    """텍스트/라벨을 훈련/테스트 세트로 분리한다.
+        texts: list[str],
+        labels: list[int],
+        test_ratio : float,
+        val_ratio : float,
+        seed: int
+        ):
 
-    Args:
-        texts: 전체 텍스트 리스트.
-        labels: 전체 라벨 리스트.
-        test_ratio: 테스트 세트 비율 (0~1).
-        seed: 재현성을 위한 랜덤 시드.
+    train_val_texts, test_texts, train_val_labels, test_labels = train_test_split(
+        texts,
+        labels,
+        test_size = test_ratio, # 0.2
+        random_state = seed,
+        stratify = labels,
+    )
 
-    Returns:
-        (train_texts, test_texts, train_labels, test_labels)
-    """
-    # TODO: sklearn.model_selection.train_test_split 등 사용, stratify 고려
-    raise NotImplementedError
+    train_texts, val_texts, train_labels, val_labels = train_test_split(
+        train_val_texts,
+        train_val_labels,
+        test_size = val_ratio,
+        random_state = seed,
+        stratify = train_val_labels,
+    )
+
+    return train_texts, val_texts, test_texts, train_labels, val_labels, test_labels
