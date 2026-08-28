@@ -2,18 +2,16 @@
 # 이 파일과 같은 키 구조로 "덮어쓸 값만" 적어서 --config configs/exp/xxx.yaml 로 사용한다.
 
 data:
-  raw_path: "data/raw/reviews.csv"   # TODO: 실제 텍스트 데이터 경로로 교체
-  text_column: "text"
-  label_column: "label"
+  source: "20newsgroups"   # sklearn.datasets.fetch_20newsgroups(subset="all", remove=("headers","footers","quotes"))
   test_ratio: 0.2
   seed: 42
 
 preprocessing:
   lowercase: true
   remove_special_chars: true
-  remove_stopwords: false
+  remove_stopwords: true
   min_token_len: 1
-  max_len: 200          # 시퀀스 패딩/자르기 기준 길이
+  max_len: 280          # 훈련 데이터 토큰 길이 95분위수 기준 (EDA로 확인)
 
 embedding:
   method: "word2vec"    # word2vec | fasttext | glove
@@ -26,12 +24,12 @@ embedding:
 model:
   type: "lstm"          # lstm | gru
   hidden_size: 128
-  num_layers: 1
-  bidirectional: false
-  dropout: 0.3
+  num_layers: 2
+  bidirectional: true
+  dropout: 0.5
 
 train:
   batch_size: 64
-  lr: 0.001
+  lr: 0.005
   epochs: 10
   seed: 42

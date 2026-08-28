@@ -30,7 +30,7 @@ class RNNTextClassifier(nn.Module):
         Args:
             embedding_matrix: build_embedding_matrix가 만든 (vocab_size, embedding_dim) 행렬.
             model_cfg: type("lstm"/"gru"), hidden_size, num_layers, bidirectional, dropout.
-            num_classes: 출력 클래스 수 (이진 분류면 2, 또는 1로 두고 BCE 사용).
+            num_classes: 출력 클래스 수 (20 Newsgroups는 20. nn.CrossEntropyLoss와 함께 사용).
             pad_id: 임베딩 레이어의 padding_idx로 쓸 ID.
             freeze_embedding: True면 임베딩 가중치를 학습 중 고정.
         """

@@ -12,11 +12,12 @@ import yaml
 
 @dataclass
 class DataConfig:
-    raw_path: str
-    text_column: str
-    label_column: str
-    test_ratio: float
-    seed: int
+    source: str = "20newsgroups"  # "20newsgroups" | "csv"
+    raw_path: str | None = None  # source == "csv"일 때만 사용
+    text_column: str | None = None
+    label_column: str | None = None
+    test_ratio: float = 0.2
+    seed: int = 42
 
 
 @dataclass

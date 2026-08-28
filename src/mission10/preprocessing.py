@@ -13,15 +13,18 @@ from mission10.config import DataConfig, PreprocessingConfig
 
 
 def load_raw_data(data_cfg: DataConfig) -> pd.DataFrame:
-    """raw_path의 텍스트 데이터를 읽어 (text_column, label_column)을 가진 DataFrame으로 반환한다.
+    """data_cfg.source에 따라 원본 텍스트 데이터를 읽어 ("text", "label") 두 열을 가진 DataFrame으로 반환한다.
 
     Args:
-        data_cfg: raw_path, text_column, label_column을 포함한 설정.
+        data_cfg: source("20newsgroups" | "csv") 등을 포함한 설정.
 
     Returns:
-        text_column, label_column 두 열을 가진 DataFrame.
+        "text", "label" 두 열을 가진 DataFrame.
     """
-    # TODO: csv/tsv 등 실제 파일 포맷에 맞춰 로드
+    # TODO: source == "20newsgroups"인 경우
+    #   sklearn.datasets.fetch_20newsgroups(subset="all", remove=("headers", "footers", "quotes"))
+    #   반환된 .data(texts), .target(labels)를 DataFrame으로 변환
+    # source == "csv"인 경우 data_cfg.raw_path/text_column/label_column으로 pandas 로드 (현재 미사용 경로)
     raise NotImplementedError
 
 
@@ -36,6 +39,8 @@ def clean_text(text: str, cfg: PreprocessingConfig) -> str:
         정제된 텍스트.
     """
     # TODO: cfg.lowercase / cfg.remove_special_chars / cfg.remove_stopwords 순서로 적용
+    # remove_special_chars: re.sub(r"[^a-zA-Z\s]", "", text) 같은 정규식 활용
+    # remove_stopwords: nltk.corpus.stopwords.words("english") 사용 (nltk.download("stopwords") 필요)
     raise NotImplementedError
 
 
@@ -48,7 +53,7 @@ def tokenize(text: str) -> list[str]:
     Returns:
         토큰(단어) 리스트.
     """
-    # TODO: 공백 분리 / nltk / konlpy 등 사용할 토크나이저 선택해서 구현
+    # TODO: nltk.tokenize.word_tokenize 사용 (nltk.download("punkt"), nltk.download("punkt_tab") 필요)
     raise NotImplementedError
 
 

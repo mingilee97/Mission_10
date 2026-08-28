@@ -18,4 +18,5 @@ def compute_metrics(y_true: list[int], y_pred: list[int]) -> dict[str, float]:
         {"accuracy": ..., "precision": ..., "recall": ..., "f1": ...} 형태의 dict.
     """
     # TODO: sklearn.metrics (accuracy_score, precision_recall_fscore_support 등) 활용
+    # 20 Newsgroups는 20클래스 다중분류이므로 precision/recall/f1은 average="macro" 권장
     raise NotImplementedError

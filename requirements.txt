@@ -1,9 +1,11 @@
-torch
+--extra-index-url https://download.pytorch.org/whl/cu130
+torch==2.13.0+cu130   # RTX 50xx(Blackwell, sm_120)는 CUDA 13 빌드 필요. CPU만 있다면 torch로 교체
 pandas
 numpy
 scikit-learn
 matplotlib
-gensim
+gensim>=4.3.3
+nltk
 pyyaml
 jupyter
 ipywidgets
