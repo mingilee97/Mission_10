@@ -31,7 +31,21 @@ def train_one_epoch(
     Returns:
         해당 epoch의 평균 학습 loss.
     """
-    raise NotImplementedError
+    model.train()
+    total_loss = 0.0
+
+    for sequences, labels in dataloader:
+        sequences, labels = sequences.to(device), labels.to(device)
+
+        optimizer.zero_grad()
+        logits = model(sequences)
+        loss = criterion(logits, labels)
+        loss.backward()
+        optimizer.step()
+
+        total_loss += loss.item()
+
+    return total_loss / len(dataloader)
 
 
 @torch.no_grad()
@@ -52,7 +66,23 @@ def evaluate(
     Returns:
         (평균 loss, 실제 라벨 리스트, 예측 라벨 리스트)
     """
-    raise NotImplementedError
+    model.eval()
+    total_loss = 0.0
+    all_labels: list[int] = []
+    all_preds: list[int] = []
+
+    for sequences, labels in dataloader:
+        sequences, labels = sequences.to(device), labels.to(device)
+
+        logits = model(sequences)
+        loss = criterion(logits, labels)
+        total_loss += loss.item()
+
+        preds = torch.argmax(logits, dim=1)
+        all_labels.extend(labels.cpu().tolist())
+        all_preds.extend(preds.cpu().tolist())
+
+    return total_loss / len(dataloader), all_labels, all_preds
 
 
 def fit(
@@ -74,4 +104,18 @@ def fit(
     Returns:
         {"train_loss": [...], "val_loss": [...]} 형태의 epoch별 기록.
     """
-    raise NotImplementedError
+    model.to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=train_cfg.lr)
+    criterion = torch.nn.CrossEntropyLoss()
+
+    history: dict[str, list[float]] = {"train_loss": [], "val_loss": []}
+
+    for epoch in range(train_cfg.epochs):
+        train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
+        val_loss, _, _ = evaluate(model, val_loader, criterion, device)
+
+        history["train_loss"].append(train_loss)
+        history["val_loss"].append(val_loss)
+        print(f"epoch {epoch + 1}/{train_cfg.epochs} - train_loss: {train_loss:.4f} - val_loss: {val_loss:.4f}")
+
+    return history

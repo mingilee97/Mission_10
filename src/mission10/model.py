@@ -35,7 +35,30 @@ class RNNTextClassifier(nn.Module):
             freeze_embedding: True면 임베딩 가중치를 학습 중 고정.
         """
         super().__init__()
-        raise NotImplementedError
+        self.rnn_type = model_cfg.type
+        self.bidirectional = model_cfg.bidirectional
+
+        self.embedding = nn.Embedding.from_pretrained(
+            torch.tensor(embedding_matrix, dtype=torch.float),
+            freeze=freeze_embedding,
+            padding_idx=pad_id,
+        )
+        embedding_dim = embedding_matrix.shape[1]
+
+        rnn_cls = nn.LSTM if model_cfg.type == "lstm" else nn.GRU
+        # dropout은 num_layers>=2일 때만 레이어 사이에 적용됨 (nn.LSTM/GRU의 사양)
+        self.rnn = rnn_cls(
+            input_size=embedding_dim,
+            hidden_size=model_cfg.hidden_size,
+            num_layers=model_cfg.num_layers,
+            batch_first=True,
+            dropout=model_cfg.dropout if model_cfg.num_layers > 1 else 0.0,
+            bidirectional=model_cfg.bidirectional,
+        )
+
+        # 양방향이면 마지막 층의 정방향/역방향 hidden을 이어붙여 쓰므로 입력 차원이 2배
+        classifier_input_dim = model_cfg.hidden_size * (2 if model_cfg.bidirectional else 1)
+        self.classifier = nn.Linear(classifier_input_dim, num_classes)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -45,4 +68,18 @@ class RNNTextClassifier(nn.Module):
         Returns:
             FloatTensor[B, num_classes] 형태의 로짓.
         """
-        raise NotImplementedError
+        embedded = self.embedding(x)  # [B, L, embedding_dim]
+
+        if self.rnn_type == "lstm":
+            _, (h_n, _) = self.rnn(embedded)
+        else:
+            _, h_n = self.rnn(embedded)
+        # h_n: [num_layers * num_directions, B, hidden_size]
+
+        if self.bidirectional:
+            # 마지막 층의 정방향(h_n[-2])과 역방향(h_n[-1]) hidden을 이어붙임
+            last_hidden = torch.cat([h_n[-2], h_n[-1]], dim=-1)
+        else:
+            last_hidden = h_n[-1]
+
+        return self.classifier(last_hidden)
