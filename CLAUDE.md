@@ -22,11 +22,13 @@
 
 ## 현재 상태
 
-`src/mission10/` 각 모듈은 함수 시그니처 + docstring(Args/Returns) + TODO 주석만
-있고 본문은 `raise NotImplementedError` 상태다. `config.py`만 완성되어 있다.
+`src/mission10/` 전 모듈이 1차 구현되어 있다 (PR #9 preprocessing, PR #10 나머지).
+지금은 `notebooks/02_colab_pipeline.ipynb`로 Colab에서 파이프라인을 단계별로
+돌려보며 문제를 찾고, 해당 모듈을 하나씩 개선하는 단계다.
 
-구현 순서 권장: `preprocessing.py` -> `embeddings.py` -> `dataset.py` -> `model.py`
--> `train.py` -> `metrics.py` -> `compare.py` -> `visualize.py`
+알려진 점검 대상은 그 노트북의 13번 섹션과 `README.md`의 "알려진 한계"에 있다.
+개선할 때도 파이프라인 순서를 따른다: `preprocessing.py` -> `embeddings.py`
+-> `dataset.py` -> `model.py` -> `train.py` -> `metrics.py` -> `compare.py` -> `visualize.py`
 
 ## 코드 규약
 
