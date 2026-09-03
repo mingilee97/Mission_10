@@ -42,3 +42,22 @@ python scripts/run_experiment.py --config configs/base.yaml --exp configs/exp/fa
 git log --oneline
 git show <commit>:src/mission10/model.py   # 특정 커밋 시점 파일 확인
 ```
+
+## 세션 시작 시 도구 확인 (모든 환경 공통)
+
+이 프로젝트는 Claude Code 스킬 5종(agent-browser, find-skills, design-taste-frontend,
+mcp-builder, GSD)과 agent-browser CLI를 전제로 한다. 앞의 네 개는 `.claude/skills/`에
+커밋되어 git으로 따라오지만, **GSD와 agent-browser CLI는 컴퓨터마다 따로 설치**되어
+있어야 한다(데스크톱, 노트북, 웹 컨테이너가 각각 다르다).
+
+- 세션을 시작하면 작업에 들어가기 전에 먼저 `bash scripts/setup_claude_skills.sh --check`를
+  실행해 이 컴퓨터에 무엇이 빠졌는지 확인한다.
+- 빠진 항목이 있으면 `bash scripts/setup_claude_skills.sh`를 실행해 **없는 것만** 설치한다.
+  이미 있는 항목은 스크립트가 건너뛰므로 중복 설치되지 않는다.
+- GSD 설치는 `~/.claude/settings.json`에 hooks와 statusLine을 추가한다. 스크립트가 설치
+  전에 날짜가 붙은 백업 사본을 남기므로, 설치 후 사용자에게 백업 위치를 알려준다.
+  GSD를 새로 설치했다면 Claude Code 재시작이 필요하다는 점도 알려준다.
+- agent-browser의 Chrome 다운로드가 막힌 환경(프록시 등)에서는 설치를 반복하지 말고,
+  기존 Chromium 경로를 `AGENT_BROWSER_EXECUTABLE_PATH` 환경 변수로 지정해서 쓴다.
+- 확인 결과와 새로 설치한 항목은 사용자에게 짧게 보고한다. 모두 설치되어 있으면
+  한 줄로만 알리고 바로 작업으로 넘어간다.
