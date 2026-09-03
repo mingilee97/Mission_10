@@ -126,21 +126,29 @@ fi
 
 # ──────────────────────────────────────────────────────────────
 echo; echo "== 5. Context7 (ctx7 → 최신 라이브러리 문서) =="
-# ctx7 setup --claude 는 --mcp(MCP 서버 등록) 또는 --cli(스킬 복사) 중 하나를 남긴다.
-if claude mcp get context7 >/dev/null 2>&1 || [ -f "$CLAUDE_HOME/skills/context7/SKILL.md" ]; then
-  ok "Context7 설정됨 ($(claude mcp get context7 >/dev/null 2>&1 && echo MCP || echo 스킬))"
+# ctx7 setup --claude 는 기본적으로 브라우저 로그인을 요구한다(-y 로도 생략 안 됨).
+# 자동화에서는 공식 옵션 중 --api-key(키가 환경 변수 CONTEXT7_API_KEY 에 있을 때) 또는
+# --oauth(키 없이 MCP 서버만 등록, 이후 Claude Code 의 /mcp 에서 로그인)를 쓴다.
+ctx7_present() { claude mcp get context7 >/dev/null 2>&1 || [ -f "$CLAUDE_HOME/skills/context7-mcp/SKILL.md" ] || [ -f "$CLAUDE_HOME/skills/find-docs/SKILL.md" ]; }
+if ctx7_present; then
+  ok "Context7 설정됨 ($(claude mcp get context7 2>/dev/null | grep -E '^\s*URL:' | awk '{print $2}'))"
 else
   miss context7 "Context7 미설정"
-  # -y: 확인 프롬프트 생략. 로그인(context7.com 접속)이 필요하므로 그 호스트가 막힌 환경에서는 실패한다.
-  run npx --yes ctx7@latest setup --claude -y
-  # ctx7 는 로그인 실패("Setup cancelled")에도 종료 코드 0 을 돌려주므로 결과물로 다시 판정한다.
-  if [ "$CHECK_ONLY" = 0 ] && ! { claude mcp get context7 >/dev/null 2>&1 || [ -f "$CLAUDE_HOME/skills/context7/SKILL.md" ]; }; then
-    fail context7 "ctx7 setup 이 설정을 남기지 않음 (context7.com 접속/로그인 필요. 막힌 네트워크면 다른 환경에서 실행)"
+  if [ -n "${CONTEXT7_API_KEY:-}" ]; then
+    if [ "$CHECK_ONLY" = 1 ]; then say "(실행 예정) npx --yes ctx7@latest setup --claude --mcp --api-key <redacted>"
+    else say "\$ npx --yes ctx7@latest setup --claude --mcp --api-key <redacted>"; npx --yes ctx7@latest setup --claude --mcp --api-key "$CONTEXT7_API_KEY" 2>&1 | sed -E 's/ctx7sk-[A-Za-z0-9_-]+/<redacted>/g'; fi
+  else
+    run npx --yes ctx7@latest setup --claude --oauth
+    note "Context7 는 키 없이 등록됨 → Claude Code 안에서 /mcp → context7 → Authenticate 로 한 번 로그인"
+  fi
+  # ctx7 는 실패("Setup cancelled")에도 종료 코드 0 을 돌려주므로 결과물로 다시 판정한다.
+  if [ "$CHECK_ONLY" = 0 ] && ! ctx7_present; then
+    fail context7 "ctx7 setup 이 설정을 남기지 않음 (context7.com 접속 필요. 막힌 네트워크면 다른 환경에서 실행)"
   fi
 fi
-if [ "$CHECK_ONLY" = 0 ] && { claude mcp get context7 >/dev/null 2>&1 || [ -f "$CLAUDE_HOME/skills/context7/SKILL.md" ]; }; then
-  say "검증: npx ctx7 library next.js routing"
-  npx --yes ctx7@latest library next.js routing 2>&1 | head -5 | sed 's/^/    /'
+if [ "$CHECK_ONLY" = 0 ] && ctx7_present; then
+  say "검증: npx ctx7 library next.js routing (context7.com 접속 필요)"
+  npx --yes ctx7@latest library next.js routing 2>&1 | head -4 | sed 's/^/    /'
 fi
 
 # ──────────────────────────────────────────────────────────────
