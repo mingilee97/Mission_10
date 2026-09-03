@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+
 
 def compute_metrics(y_true: list[int], y_pred: list[int]) -> dict[str, float]:
     """정확도, 정밀도, 재현율, F1 등을 계산한다.
@@ -17,4 +19,8 @@ def compute_metrics(y_true: list[int], y_pred: list[int]) -> dict[str, float]:
     Returns:
         {"accuracy": ..., "precision": ..., "recall": ..., "f1": ...} 형태의 dict.
     """
-    raise NotImplementedError
+    accuracy = accuracy_score(y_true, y_pred)
+    # 20 Newsgroups는 20클래스 다중분류이므로 클래스별 지표를 단순 평균(macro)으로 합산
+    precision, recall, f1, _ = precision_recall_fscore_support(y_true, y_pred, average="macro", zero_division=0)
+
+    return {"accuracy": accuracy, "precision": precision, "recall": recall, "f1": f1}

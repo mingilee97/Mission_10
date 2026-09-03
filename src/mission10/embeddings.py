@@ -7,49 +7,41 @@
 from __future__ import annotations
 
 import numpy as np
+from gensim.models import Word2Vec
+from gensim.models import FastText
 
 
 def train_word2vec(token_lists: list[list[str]], embedding_dim: int, window: int, min_count: int):
-    """gensim Word2Vec을 토큰 리스트로 학습한다.
+    model = Word2Vec(
+        sentences = token_lists, #문서별 토큰 리스트의 리스트
+        vector_size = embedding_dim, #단어 하나를 몇 차원 벡터로 표현할지
+        window = window,  # 한 단어 기준 앞 뒤로 몇 개 단어까지를 문맥으로볼지
+        min_count = min_count, # 최소 카운트 이상 등장한 단어만 학습
+    )
 
-    Args:
-        token_lists: 문서별 토큰 리스트의 리스트 (문장 단위 코퍼스).
-        embedding_dim: 임베딩 벡터 차원 (vector_size).
-        window: 컨텍스트 윈도우 크기.
-        min_count: 이 빈도 미만 단어는 학습에서 제외.
-
-    Returns:
-        학습된 gensim Word2Vec 모델.
-    """
-    raise NotImplementedError
-
+    return model
 
 def train_fasttext(token_lists: list[list[str]], embedding_dim: int, window: int, min_count: int):
-    """gensim FastText를 토큰 리스트로 학습한다.
+    model = FastText(
+        sentences = token_lists, # 문서별 토큰 리스트의 리스트
+        vector_size = embedding_dim, # 사전 정의된 벡터 사이즈
+        window = window,
+        min_count = min_count,
+    )
 
-    Args:
-        token_lists: 문서별 토큰 리스트의 리스트.
-        embedding_dim: 임베딩 벡터 차원.
-        window: 컨텍스트 윈도우 크기.
-        min_count: 이 빈도 미만 단어는 학습에서 제외.
-
-    Returns:
-        학습된 gensim FastText 모델.
-    """
-    raise NotImplementedError
+    return model
 
 
 def load_glove(glove_path: str, embedding_dim: int) -> dict[str, np.ndarray]:
-    """사전학습된 GloVe 텍스트 파일을 {단어: 벡터} 딕셔너리로 로드한다.
+    embeddings_dict = {}
+    with open(glove_path, encoding = 'utf-8') as f: # 파일 열기
+        for line in f:
+            values = line.split() # 공백 기준 분리
+            word = values[0] # 첫 번째 값이 단어
+            vector = np.asarray(values[1:], dtype = 'float32') # 2~100은 임베딩
+            embeddings_dict[word] = vector
 
-    Args:
-        glove_path: glove.6B.100d.txt 같은 GloVe 벡터 파일 경로.
-        embedding_dim: 벡터 차원 (파일의 차원과 일치해야 함).
-
-    Returns:
-        단어를 key로, numpy 벡터를 value로 갖는 dict.
-    """
-    raise NotImplementedError
+    return embeddings_dict
 
 
 def build_embedding_matrix(
@@ -57,16 +49,13 @@ def build_embedding_matrix(
     embedding_dim: int,
     keyed_vectors,
 ) -> np.ndarray:
-    """vocab의 각 단어 ID에 대응하는 임베딩 벡터로 이루어진 행렬을 만든다.
+    """vocab의 각 단어 ID에 대응하는 임베딩 벡터로 이루어진 행렬을 만든다."""
+    vocab_size = len(vocab)
+    matrix = np.random.normal(size=(vocab_size, embedding_dim)).astype("float32")
+    matrix[0] = np.zeros(embedding_dim)  # <pad>는 항상 0벡터
 
-    Args:
-        vocab: build_vocab이 만든 단어 -> ID 사전.
-        embedding_dim: 임베딩 벡터 차원.
-        keyed_vectors: train_word2vec/train_fasttext의 결과(.wv) 또는 load_glove의 dict.
-            단어 문자열로 벡터를 조회할 수 있는 대상이면 됨.
+    for word, idx in vocab.items():
+        if word in keyed_vectors:
+            matrix[idx] = keyed_vectors[word]
 
-    Returns:
-        shape (vocab_size, embedding_dim) 인 numpy 행렬. 인덱스는 vocab의 ID와 일치.
-        keyed_vectors에 없는 단어는 랜덤 초기화 또는 0벡터로 채운다.
-    """
-    raise NotImplementedError
+    return matrix
