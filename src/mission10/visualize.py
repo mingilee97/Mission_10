@@ -16,7 +16,15 @@ def plot_training_curves(history: dict[str, list[float]], title: str = "") -> pl
     Returns:
         matplotlib Figure.
     """
-    raise NotImplementedError
+    fig, ax = plt.subplots()
+    epochs = range(1, len(history["train_loss"]) + 1)
+    ax.plot(epochs, history["train_loss"], label="train_loss")
+    ax.plot(epochs, history["val_loss"], label="val_loss")
+    ax.set_xlabel("epoch")
+    ax.set_ylabel("loss")
+    ax.set_title(title)
+    ax.legend()
+    return fig
 
 
 def plot_embedding_comparison(comparison_df: pd.DataFrame, metric: str = "accuracy") -> plt.Figure:
@@ -29,4 +37,9 @@ def plot_embedding_comparison(comparison_df: pd.DataFrame, metric: str = "accura
     Returns:
         matplotlib Figure.
     """
-    raise NotImplementedError
+    fig, ax = plt.subplots()
+    labels = [" / ".join(map(str, idx)) if isinstance(idx, tuple) else str(idx) for idx in comparison_df.index]
+    ax.bar(labels, comparison_df[metric])
+    ax.set_ylabel(metric)
+    ax.set_title(f"{metric} by embedding/model")
+    return fig

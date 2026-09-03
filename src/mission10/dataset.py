@@ -7,7 +7,10 @@
 
 from __future__ import annotations
 
+from functools import partial
+
 import torch
+from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset
 
 
@@ -20,13 +23,16 @@ class TextClassificationDataset(Dataset):
             sequences: 각 문서를 단어 ID 시퀀스로 변환한 리스트 (가변 길이).
             labels: 문서별 라벨 (0/1 등).
         """
-        raise NotImplementedError
+        self.sequences = sequences
+        self.labels = labels
 
     def __len__(self) -> int:
-        raise NotImplementedError
+        return len(self.sequences)
 
     def __getitem__(self, idx: int):
-        raise NotImplementedError
+        sequence = torch.tensor(self.sequences[idx], dtype=torch.long)
+        label = torch.tensor(self.labels[idx], dtype=torch.long)
+        return sequence, label
 
 
 def collate_fn(batch: list[tuple], pad_id: int = 0, max_len: int | None = None):
@@ -40,7 +46,18 @@ def collate_fn(batch: list[tuple], pad_id: int = 0, max_len: int | None = None):
     Returns:
         (padded_sequences: LongTensor[B, L], labels: LongTensor[B])
     """
-    raise NotImplementedError
+    sequences, labels = zip(*batch)
+
+    if max_len is not None:
+        sequences = [seq[:max_len] for seq in sequences]
+
+    padded = pad_sequence(sequences, batch_first=True, padding_value=pad_id)
+
+    if max_len is not None and padded.size(1) < max_len:
+        pad_amount = max_len - padded.size(1)
+        padded = torch.nn.functional.pad(padded, (0, pad_amount), value=pad_id)
+
+    return padded, torch.stack(labels)
 
 
 def build_dataloader(
@@ -64,4 +81,10 @@ def build_dataloader(
     Returns:
         구성된 DataLoader.
     """
-    raise NotImplementedError
+    dataset = TextClassificationDataset(sequences, labels)
+    return DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        collate_fn=partial(collate_fn, pad_id=pad_id, max_len=max_len),
+    )
