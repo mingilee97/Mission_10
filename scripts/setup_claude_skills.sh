@@ -10,15 +10,19 @@
 #
 # 다루는 항목 (세트별)
 #   1세트  프로젝트 스킬 4종(.claude/skills, git으로 따라옴), GSD, agent-browser CLI
-#   2세트  Context7(ctx7), Strix, Graphify, Headroom, Ponytail, ECC
+#   2세트  Context7(ctx7), Strix, Graphify, Headroom, Ponytail, ECC (모두 자동 설치)
 #   3세트  MCP 서버 5종(playwright, chrome-devtools, glif, perplexity, firecrawl)
 #
 # 중복 설치를 막는 규칙 (조사로 확인한 사실에 근거)
-#   - Ponytail: 계정 동기화 스킬(~/.claude/skills/synced/*/ponytail)이 이미 있으면
-#     플러그인을 설치하지 않는다. 같은 스킬이 두 벌 생기기 때문이다.
+#   - Ponytail: 플러그인의 스킬 6개는 계정 동기화 스킬(~/.claude/skills/synced/*/ponytail)과
+#     내용이 같지만, 플러그인은 "항상 켜짐" 훅과 강도 조절(/ponytail lite|full|ultra)을 더한다.
+#     그래서 플러그인 목록(claude plugin list)에 없을 때만 설치하고, 동기화 스킬은 건드리지 않는다.
 #   - Graphify: GSD의 gsd-graphify 는 외부 graphify CLI(PyPI: graphifyy)를 "요구"한다.
 #     중복이 아니라 의존성이므로 설치한다. 단 CLI와 스킬을 각각 따로 검사한다.
-#   - ECC: 터미널에서 자동 설치하지 않는다. 없으면 사용자가 대화창에 입력할 두 줄을 안내한다.
+#   - ECC: 공식 터미널 명령(claude plugin marketplace add / install)으로 설치한다. ECC 는 자체
+#     chrome-devtools MCP 를 함께 올리므로, 9번에서 등록한 chrome-devtools 와 겹치면 플러그인
+#     쪽을 ~/.claude.json 의 disabledMcpServers 로 끈다(/mcp 토글과 같은 저장 위치). 설치 뒤
+#     `npx ecc-universal setup` 이나 훅 복사를 추가로 하면 스킬·훅이 두 벌이 되므로 하지 않는다.
 #   - API 키가 필요한 MCP(perplexity, firecrawl)는 환경 변수에 키가 있을 때만 등록하고,
 #     키 값은 절대 화면에 찍지 않는다.
 
@@ -241,24 +245,46 @@ if [ "$CHECK_ONLY" = 0 ]; then say "연결 상태:"; claude mcp list 2>/dev/null
 note "glif 는 브라우저 로그인이 필요해 'Needs authentication' 이 정상. Claude Code 안에서 /mcp → glif → Authenticate"
 
 # ──────────────────────────────────────────────────────────────
-echo; echo "== 10. Ponytail (최소 구현 강제 스킬) =="
+echo; echo "== 10. Ponytail (최소 구현 강제, 항상 켜짐 훅 + 강도 조절) =="
 if claude plugin list 2>/dev/null | grep -q "ponytail@ponytail"; then ok "ponytail 플러그인 설치됨"
-elif ls "$CLAUDE_HOME"/skills/synced/*/ponytail/SKILL.md >/dev/null 2>&1; then
-  ok "ponytail 스킬이 계정 동기화로 이미 존재 → 플러그인 설치 생략 (같은 스킬이 두 벌 되는 것을 방지)"
 else
-  miss ponytail "ponytail 없음"
+  miss ponytail "ponytail 플러그인 없음"
+  ls "$CLAUDE_HOME"/skills/synced/*/ponytail/SKILL.md >/dev/null 2>&1 \
+    && note "ponytail 스킬 6개는 계정 동기화로도 존재함. 플러그인은 같은 스킬을 ponytail: 이름공간으로 한 벌 더 두는 대신 항상 켜짐 훅과 강도 조절을 추가함"
+  backup_file "$CLAUDE_HOME/settings.json"   # enabledPlugins / extraKnownMarketplaces 가 추가된다
   run claude plugin marketplace add DietrichGebert/ponytail --scope user \
     && run claude plugin install ponytail@ponytail --scope user || fail ponytail "ponytail 플러그인 설치 실패"
 fi
 
 # ──────────────────────────────────────────────────────────────
-echo; echo "== 11. ECC (Everything Claude Code, 대화창에서만 설치) =="
+echo; echo "== 11. ECC (Everything Claude Code: 스킬 286·에이전트 68·명령 94·훅) =="
 if claude plugin list 2>/dev/null | grep -qi "ecc@ecc"; then ok "ecc 플러그인 설치됨"
 else
-  printf '  [없음] ecc 미설치 (자동 설치 대상 아님)\n'
-  note "ECC 는 자동 설치하지 않습니다. Claude Code 대화창에 아래 두 줄을 차례로 입력하세요:"
-  say "    /plugin marketplace add https://github.com/affaan-m/ECC"
-  say "    /plugin install ecc@ecc"
+  miss ecc "ecc 플러그인 없음"
+  backup_file "$CLAUDE_HOME/settings.json"
+  # --config 로 userConfig 두 값을 미리 주면 프롬프트 없이 설치된다. 저장소 약 63MB 를 클론한다.
+  run claude plugin marketplace add affaan-m/ECC --scope user \
+    && run claude plugin install ecc@ecc --scope user --config hooks_enabled=true --config hook_profile=standard \
+    || fail ecc "ecc 플러그인 설치 실패"
+  note "플러그인을 새로 설치했으면 Claude Code 재시작(또는 /reload-plugins) 필요"
+fi
+# ECC 의 .mcp.json 이 chrome-devtools 를 한 번 더 올린다. 9번 서버와 겹치면 플러그인 쪽만 끈다.
+if [ "$CHECK_ONLY" = 0 ] && claude mcp get chrome-devtools >/dev/null 2>&1 && claude mcp get plugin:ecc:chrome-devtools >/dev/null 2>&1; then
+  CJ="${CLAUDE_CONFIG_DIR:-$HOME}/.claude.json"
+  if [ -f "$CJ" ] && ! grep -q '"plugin:ecc:chrome-devtools"' "$CJ"; then
+    backup_file "$CJ"
+    python3 - "$CJ" <<'PY'
+import json,os,sys
+p=sys.argv[1]; d=json.load(open(p))
+# 최상위와 현재 프로젝트 항목 양쪽에 넣는다. 어느 쪽을 읽는지 CLI 가 문서화하지 않았다.
+for t in (d, d.setdefault("projects",{}).setdefault(os.getcwd(),{})):
+    l=t.get("disabledMcpServers") or []
+    if "plugin:ecc:chrome-devtools" not in l: l.append("plugin:ecc:chrome-devtools")
+    t["disabledMcpServers"]=l
+json.dump(d,open(p,"w"),indent=2)
+PY
+    say "중복 MCP 정리: plugin:ecc:chrome-devtools 를 disabledMcpServers 에 추가. 새 세션의 /mcp 에서 꺼졌는지 확인하고, 여전히 두 개면 claude mcp remove chrome-devtools 로 직접 등록한 쪽을 지운다"
+  else ok "중복 MCP 정리됨 (plugin:ecc:chrome-devtools 비활성)"; fi
 fi
 
 # ──────────────────────────────────────────────────────────────
